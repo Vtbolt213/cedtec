@@ -39,17 +39,16 @@ export default function TabLayout() {
           ),
         }}
       />
-      {!isAdmin && (
-        <Tabs.Screen
-          name="create"
-          options={{
-            title: 'Novo Ticket',
-            tabBarIcon: ({ color, size }) => (
-              <Ionicons name="add-circle-outline" size={size} color={color} />
-            ),
-          }}
-        />
-      )}
+      <Tabs.Screen
+        name="create"
+        options={{
+          title: 'Novo Ticket',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="add-circle-outline" size={size} color={color} />
+          ),
+          href: isAdmin ? null : '/(tabs)/create',
+        }}
+      />
       <Tabs.Screen
         name="profile"
         options={{
