@@ -3,7 +3,8 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import * as SplashScreen from 'expo-splash-screen';
 import { useAuthStore } from '../src/stores/authStore';
-import { useFrameworkReady } from '../hooks/useFrameworkReady';
+import { useFrameworkReady } from '../hooks/useFrameworkReady'
+import { useFrameworkReady } from '@/hooks/useFrameworkReady';
 
 // Prevent the splash screen from auto-hiding
 SplashScreen.preventAutoHideAsync();
