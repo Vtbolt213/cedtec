@@ -1,7 +1,7 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import * as SecureStore from 'expo-secure-store';
 import { supabase, type Profile } from '../lib/supabase';
-import toast from 'react-hot-toast';
+import { Alert } from 'react-native';
 
 interface AuthState {
   user: any;
@@ -14,8 +14,7 @@ interface AuthState {
 }
 
 export const useAuthStore = create<AuthState>()(
-  persist(
-    (set, get) => ({
+  (set, get) => ({
       user: null,
       profile: null,
       loading: true,
@@ -34,12 +33,12 @@ export const useAuthStore = create<AuthState>()(
 
           if (error) {
             console.error('Erro de login:', error);
-            toast.error('Credenciais inválidas');
+            Alert.alert('Erro', 'Credenciais inválidas');
             return false;
           }
 
           if (!data.user) {
-            toast.error('Erro no login');
+            Alert.alert('Erro', 'Erro no login');
             return false;
           }
 
@@ -52,22 +51,26 @@ export const useAuthStore = create<AuthState>()(
 
           if (profileError) {
             console.error('Erro ao buscar perfil:', profileError);
-            toast.error('Erro ao carregar perfil do usuário');
+            Alert.alert('Erro', 'Erro ao carregar perfil do usuário');
             return false;
           }
 
           const profile = profileData?.[0] || null;
           if (!profile) {
-            toast.error('Perfil não encontrado');
+            Alert.alert('Erro', 'Perfil não encontrado');
             return false;
           }
 
           set({ user: data.user, profile: profile });
-          toast.success(`Bem-vindo, ${profile.full_name || profile.username}!`);
+          
+          // Salvar dados no SecureStore
+          await SecureStore.setItemAsync('user', JSON.stringify(data.user));
+          await SecureStore.setItemAsync('profile', JSON.stringify(profile));
+          
           return true;
         } catch (error) {
           console.error('Erro no login:', error);
-          toast.error('Erro interno no login');
+          Alert.alert('Erro', 'Erro interno no login');
           return false;
         } finally {
           set({ loading: false });
@@ -80,7 +83,7 @@ export const useAuthStore = create<AuthState>()(
           
           // Validar username
           if (!/^[a-zA-Z0-9_]+$/.test(username)) {
-            toast.error('Username deve conter apenas letras, números e underscore');
+            Alert.alert('Erro', 'Username deve conter apenas letras, números e underscore');
             return false;
           }
 
@@ -103,27 +106,26 @@ export const useAuthStore = create<AuthState>()(
             console.error('Erro no cadastro:', error);
             
             if (error.message.includes('already registered') || error.message.includes('User already registered')) {
-              toast.error('Este usuário já está cadastrado');
+              Alert.alert('Erro', 'Este usuário já está cadastrado');
             } else if (error.message.includes('duplicate key value')) {
-              toast.error('Este username já está em uso');
+              Alert.alert('Erro', 'Este username já está em uso');
             } else if (error.message.includes('Password should be at least')) {
-              toast.error('A senha deve ter pelo menos 6 caracteres');
+              Alert.alert('Erro', 'A senha deve ter pelo menos 6 caracteres');
             } else {
-              toast.error('Erro ao criar conta: ' + error.message);
+              Alert.alert('Erro', 'Erro ao criar conta: ' + error.message);
             }
             return false;
           }
 
           if (!data.user) {
-            toast.error('Erro ao criar usuário');
+            Alert.alert('Erro', 'Erro ao criar usuário');
             return false;
           }
 
-          toast.success('Conta criada com sucesso! Faça login para continuar.');
           return true;
         } catch (error) {
           console.error('Erro no cadastro:', error);
-          toast.error('Erro interno no cadastro');
+          Alert.alert('Erro', 'Erro interno no cadastro');
           return false;
         } finally {
           set({ loading: false });
@@ -136,15 +138,30 @@ export const useAuthStore = create<AuthState>()(
           if (error) throw error;
           
           set({ user: null, profile: null });
-          toast.success('Logout realizado com sucesso');
+          
+          // Limpar dados do SecureStore
+          await SecureStore.deleteItemAsync('user');
+          await SecureStore.deleteItemAsync('profile');
+          
         } catch (error) {
           console.error('Erro no logout:', error);
-          toast.error('Erro ao fazer logout');
+          Alert.alert('Erro', 'Erro ao fazer logout');
         }
       },
 
       initializeAuth: async () => {
         try {
+          // Tentar carregar dados do SecureStore primeiro
+          const storedUser = await SecureStore.getItemAsync('user');
+          const storedProfile = await SecureStore.getItemAsync('profile');
+          
+          if (storedUser && storedProfile) {
+            set({ 
+              user: JSON.parse(storedUser), 
+              profile: JSON.parse(storedProfile) 
+            });
+          }
+          
           const { data: { session } } = await supabase.auth.getSession();
           
           if (session?.user) {
@@ -159,17 +176,25 @@ export const useAuthStore = create<AuthState>()(
               console.error('Erro ao buscar perfil:', profileError);
               // Se não conseguir buscar o perfil, fazer logout
               await supabase.auth.signOut();
+              await SecureStore.deleteItemAsync('user');
+              await SecureStore.deleteItemAsync('profile');
               set({ user: null, profile: null });
             } else {
               const profile = profileData?.[0] || null;
               if (profile) {
                 set({ user: session.user, profile: profile });
+                await SecureStore.setItemAsync('user', JSON.stringify(session.user));
+                await SecureStore.setItemAsync('profile', JSON.stringify(profile));
               } else {
                 // Se não encontrar perfil, fazer logout
                 await supabase.auth.signOut();
+                await SecureStore.deleteItemAsync('user');
+                await SecureStore.deleteItemAsync('profile');
                 set({ user: null, profile: null });
               }
             }
+          } else if (!storedUser || !storedProfile) {
+            set({ user: null, profile: null });
           }
         } catch (error) {
           console.error('Erro ao inicializar auth:', error);
@@ -177,10 +202,5 @@ export const useAuthStore = create<AuthState>()(
           set({ loading: false });
         }
       },
-    }),
-    {
-      name: 'cedtec-auth-storage',
-      partialize: (state) => ({ profile: state.profile }),
-    }
-  )
+    })
 );

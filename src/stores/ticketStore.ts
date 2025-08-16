@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { supabase, type Ticket, type TicketInteraction } from '../lib/supabase';
-import toast from 'react-hot-toast';
+import { Alert } from 'react-native';
 
 interface TicketState {
   tickets: Ticket[];
@@ -81,7 +81,7 @@ export const useTicketStore = create<TicketState>((set, get) => ({
       set({ tickets: data || [] });
     } catch (error) {
       console.error('Erro ao buscar tickets:', error);
-      toast.error('Erro ao carregar tickets');
+      Alert.alert('Erro', 'Erro ao carregar tickets');
     } finally {
       set({ loading: false });
     }
@@ -107,7 +107,7 @@ export const useTicketStore = create<TicketState>((set, get) => ({
       set({ currentTicket: data });
     } catch (error) {
       console.error('Erro ao buscar ticket:', error);
-      toast.error('Erro ao carregar ticket');
+      Alert.alert('Erro', 'Erro ao carregar ticket');
     }
   },
 
@@ -125,12 +125,12 @@ export const useTicketStore = create<TicketState>((set, get) => ({
 
       if (error) throw error;
       
-      toast.success('Ticket criado com sucesso!');
+      Alert.alert('Sucesso', 'Ticket criado com sucesso!');
       get().fetchTickets();
       return true;
     } catch (error) {
       console.error('Erro ao criar ticket:', error);
-      toast.error('Erro ao criar ticket');
+      Alert.alert('Erro', 'Erro ao criar ticket');
       return false;
     }
   },
@@ -147,12 +147,11 @@ export const useTicketStore = create<TicketState>((set, get) => ({
       // Adicionar interação de mudança de status
       await get().addInteraction(id, `Status alterado para: ${status}`, 'status_change');
       
-      toast.success('Status atualizado com sucesso!');
       get().fetchTickets(true);
       return true;
     } catch (error) {
       console.error('Erro ao atualizar status:', error);
-      toast.error('Erro ao atualizar status');
+      Alert.alert('Erro', 'Erro ao atualizar status');
       return false;
     }
   },
@@ -173,15 +172,11 @@ export const useTicketStore = create<TicketState>((set, get) => ({
 
       if (error) throw error;
       
-      if (type === 'comment') {
-        toast.success('Comentário adicionado!');
-      }
-      
       get().fetchInteractions(ticketId);
       return true;
     } catch (error) {
       console.error('Erro ao adicionar interação:', error);
-      toast.error('Erro ao adicionar comentário');
+      Alert.alert('Erro', 'Erro ao adicionar comentário');
       return false;
     }
   },
@@ -206,7 +201,7 @@ export const useTicketStore = create<TicketState>((set, get) => ({
       set({ interactions: data || [] });
     } catch (error) {
       console.error('Erro ao buscar interações:', error);
-      toast.error('Erro ao carregar comentários');
+      Alert.alert('Erro', 'Erro ao carregar comentários');
     }
   },
 
