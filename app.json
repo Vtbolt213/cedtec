@@ -3,7 +3,7 @@
     "name": "CEDTEC Tickets",
     "slug": "cedtec-tickets",
     "version": "1.0.0",
-    "sdkVersion": "52.0.30",
+    "sdkVersion": "53.0.0",
     "main": "./App.tsx",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
