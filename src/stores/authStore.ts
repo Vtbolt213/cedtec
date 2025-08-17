@@ -114,6 +114,22 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
         return false;
       }
 
+      // Create profile entry in profiles table
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .insert({
+          id: data.user.id,
+          username: username,
+          full_name: fullName,
+          role: role,
+        });
+
+      if (profileError) {
+        console.error('Profile creation error:', profileError);
+        Alert.alert('Erro', 'Erro ao criar perfil do usuário');
+        return false;
+      }
+
       return true;
     } catch (error) {
       console.error('Sign up error:', error);
