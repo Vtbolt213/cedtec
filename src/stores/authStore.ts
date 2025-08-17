@@ -117,12 +117,12 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       // Create profile entry in profiles table
       const { error: profileError } = await supabase
         .from('profiles')
-        .insert({
+        .upsert({
           id: data.user.id,
           username: username,
           full_name: fullName,
           role: role,
-        });
+        }, { onConflict: 'id' });
 
       if (profileError) {
         console.error('Profile creation error:', profileError);
