@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { Redirect } from 'expo-router';
-import { View, ActivityIndicator } from 'react-native';
+import { View, ActivityIndicator, Text } from 'react-native';
 import { useAuthStore } from '../src/stores/authStore';
 
 export default function Index() {
@@ -15,6 +15,9 @@ export default function Index() {
         backgroundColor: '#1E40AF' 
       }}>
         <ActivityIndicator size="large" color="#ffffff" />
+        <Text style={{ color: '#ffffff', marginTop: 16, fontSize: 16 }}>
+          Carregando...
+        </Text>
       </View>
     );
   }

@@ -22,7 +22,6 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     try {
       set({ loading: true });
       
-      // Criar email baseado no username
       const email = `${username}@cedtec.local`;
 
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -31,7 +30,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       });
 
       if (error) {
-        console.error('Erro de login:', error);
+        console.error('Login error:', error);
         Alert.alert('Erro', 'Credenciais inválidas');
         return false;
       }
@@ -41,38 +40,30 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
         return false;
       }
 
-      // Buscar perfil do usuário
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', data.user.id)
-        .limit(1);
+        .single();
 
-      if (profileError) {
-        console.error('Erro ao buscar perfil:', profileError);
-        Alert.alert('Erro', 'Erro ao carregar perfil do usuário');
-        return false;
-      }
-
-      const profile = profileData?.[0] || null;
-      if (!profile) {
+      if (profileError || !profileData) {
+        console.error('Profile error:', profileError);
         Alert.alert('Erro', 'Perfil não encontrado');
         return false;
       }
 
-      set({ user: data.user, profile: profile });
+      set({ user: data.user, profile: profileData });
       
-      // Salvar dados no SecureStore
       try {
         await SecureStore.setItemAsync('user', JSON.stringify(data.user));
-        await SecureStore.setItemAsync('profile', JSON.stringify(profile));
+        await SecureStore.setItemAsync('profile', JSON.stringify(profileData));
       } catch (storeError) {
-        console.warn('Erro ao salvar no SecureStore:', storeError);
+        console.warn('SecureStore error:', storeError);
       }
       
       return true;
     } catch (error) {
-      console.error('Erro no login:', error);
+      console.error('Sign in error:', error);
       Alert.alert('Erro', 'Erro interno no login');
       return false;
     } finally {
@@ -84,13 +75,11 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     try {
       set({ loading: true });
       
-      // Validar username
       if (!/^[a-zA-Z0-9_]+$/.test(username)) {
         Alert.alert('Erro', 'Username deve conter apenas letras, números e underscore');
         return false;
       }
 
-      // Criar email baseado no username
       const email = `${username}@cedtec.local`;
 
       const { data, error } = await supabase.auth.signUp({
@@ -106,11 +95,11 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       });
 
       if (error) {
-        console.error('Erro no cadastro:', error);
+        console.error('Sign up error:', error);
         
-        if (error.message.includes('already registered') || error.message.includes('User already registered')) {
+        if (error.message.includes('already registered')) {
           Alert.alert('Erro', 'Este usuário já está cadastrado');
-        } else if (error.message.includes('duplicate key value')) {
+        } else if (error.message.includes('duplicate key')) {
           Alert.alert('Erro', 'Este username já está em uso');
         } else if (error.message.includes('Password should be at least')) {
           Alert.alert('Erro', 'A senha deve ter pelo menos 6 caracteres');
@@ -127,7 +116,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
 
       return true;
     } catch (error) {
-      console.error('Erro no cadastro:', error);
+      console.error('Sign up error:', error);
       Alert.alert('Erro', 'Erro interno no cadastro');
       return false;
     } finally {
@@ -142,87 +131,78 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       
       set({ user: null, profile: null });
       
-      // Limpar dados do SecureStore
       try {
         await SecureStore.deleteItemAsync('user');
         await SecureStore.deleteItemAsync('profile');
       } catch (storeError) {
-        console.warn('Erro ao limpar SecureStore:', storeError);
+        console.warn('SecureStore cleanup error:', storeError);
       }
       
     } catch (error) {
-      console.error('Erro no logout:', error);
+      console.error('Sign out error:', error);
       Alert.alert('Erro', 'Erro ao fazer logout');
     }
   },
 
   initializeAuth: async () => {
     try {
-      // Tentar carregar dados do SecureStore primeiro
+      console.log('Initializing auth...');
+      
+      // Try to load from SecureStore first
       try {
         const storedUser = await SecureStore.getItemAsync('user');
         const storedProfile = await SecureStore.getItemAsync('profile');
         
         if (storedUser && storedProfile) {
+          console.log('Found stored auth data');
           set({ 
             user: JSON.parse(storedUser), 
             profile: JSON.parse(storedProfile) 
           });
         }
       } catch (storeError) {
-        console.warn('Erro ao carregar do SecureStore:', storeError);
+        console.warn('SecureStore read error:', storeError);
       }
       
       const { data: { session } } = await supabase.auth.getSession();
+      console.log('Session:', session ? 'found' : 'not found');
       
       if (session?.user) {
-        // Buscar o profile do usuário
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('*')
           .eq('id', session.user.id)
-          .limit(1);
+          .single();
 
-        if (profileError) {
-          console.error('Erro ao buscar perfil:', profileError);
-          // Se não conseguir buscar o perfil, fazer logout
+        if (profileError || !profileData) {
+          console.error('Profile fetch error:', profileError);
           await supabase.auth.signOut();
           try {
             await SecureStore.deleteItemAsync('user');
             await SecureStore.deleteItemAsync('profile');
           } catch (storeError) {
-            console.warn('Erro ao limpar SecureStore:', storeError);
+            console.warn('SecureStore cleanup error:', storeError);
           }
           set({ user: null, profile: null });
         } else {
-          const profile = profileData?.[0] || null;
-          if (profile) {
-            set({ user: session.user, profile: profile });
-            try {
-              await SecureStore.setItemAsync('user', JSON.stringify(session.user));
-              await SecureStore.setItemAsync('profile', JSON.stringify(profile));
-            } catch (storeError) {
-              console.warn('Erro ao salvar no SecureStore:', storeError);
-            }
-          } else {
-            // Se não encontrar perfil, fazer logout
-            await supabase.auth.signOut();
-            try {
-              await SecureStore.deleteItemAsync('user');
-              await SecureStore.deleteItemAsync('profile');
-            } catch (storeError) {
-              console.warn('Erro ao limpar SecureStore:', storeError);
-            }
-            set({ user: null, profile: null });
+          console.log('Profile loaded successfully');
+          set({ user: session.user, profile: profileData });
+          try {
+            await SecureStore.setItemAsync('user', JSON.stringify(session.user));
+            await SecureStore.setItemAsync('profile', JSON.stringify(profileData));
+          } catch (storeError) {
+            console.warn('SecureStore save error:', storeError);
           }
         }
       } else {
+        console.log('No session found');
         set({ user: null, profile: null });
       }
     } catch (error) {
-      console.error('Erro ao inicializar auth:', error);
+      console.error('Auth initialization error:', error);
       set({ user: null, profile: null });
     } finally {
+      console.log('Auth initialization complete');
       set({ loading: false });
     }
   },
