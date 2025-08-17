@@ -5,6 +5,11 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#1E40AF"
+    },
     "assetBundlePatterns": [
       "**/*"
     ],
@@ -13,14 +18,23 @@
       "bundleIdentifier": "com.cedtec.tickets"
     },
     "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#1E40AF"
+      },
       "package": "com.cedtec.tickets"
     },
     "web": {
-      "bundler": "metro"
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./assets/favicon.png"
     },
     "plugins": [
       "expo-router"
     ],
-    "scheme": "cedtec-tickets"
+    "scheme": "cedtec-tickets",
+    "experiments": {
+      "typedRoutes": true
+    }
   }
 }
