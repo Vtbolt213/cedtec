@@ -2,7 +2,7 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import * as SplashScreen from 'expo-splash-screen';
-import { useAuthStore } from '../src/stores/authStore'
+import { useAuthStore } from '../src/stores/authStore';
 import { useFrameworkReady } from '@/hooks/useFrameworkReady';
 
 // Prevent the splash screen from auto-hiding
@@ -19,12 +19,20 @@ export default function RootLayout() {
       } catch (error) {
         console.error('Error initializing auth:', error);
       } finally {
-        await SplashScreen.hideAsync();
+        if (!loading) {
+          await SplashScreen.hideAsync();
+        }
       }
     };
 
     initialize();
-  }, []);
+  }, [initializeAuth]);
+
+  useEffect(() => {
+    if (!loading) {
+      SplashScreen.hideAsync();
+    }
+  }, [loading]);
 
   return (
     <>
