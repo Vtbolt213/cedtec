@@ -25,7 +25,8 @@
     },
     "web": {
       "favicon": "./assets/favicon.png",
-      "bundler": "metro"
+      "bundler": "metro",
+      "output": "static"
     },
     "plugins": [
       "expo-router"
@@ -33,37 +34,8 @@
     "experiments": {
       "typedRoutes": true
     },
-    "scheme": "cedtec-tickets"
-  }
-}
-    "main": "./App.tsx",
-    "orientation": "portrait",
-    "userInterfaceStyle": "light",
-    "hostType": "lan",
-    "dev": true,
-    "splash": {
-      "backgroundColor": "#1E40AF",
-      "resizeMode": "contain"
-    },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
-    "ios": {
-      "supportsTablet": true
-    },
-    "android": {
-      "adaptiveIcon": {
-        "backgroundColor": "#1E40AF"
-      }
-    },
-    "web": {
-      "bundler": "metro",
-      "output": "static"
-    },
-    "plugins": [
-      "expo-router"
-    ],
     "scheme": "cedtec-tickets",
+    "runtimeVersion": "1.0.0",
     "extra": {
       "eas": {
         "projectId": "cedtec-tickets"
